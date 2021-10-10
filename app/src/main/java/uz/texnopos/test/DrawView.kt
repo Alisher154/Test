@@ -5,10 +5,10 @@ import android.graphics.*
 import android.util.AttributeSet
 import android.util.Log
 import android.view.View
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.util.*
-import kotlin.coroutines.CoroutineContext
-import kotlin.random.Random.Default.nextInt
 
 class DrawView @JvmOverloads constructor(context: Context?, attrs: AttributeSet? = null) :
     View(context, attrs) {
@@ -67,23 +67,53 @@ class DrawView @JvmOverloads constructor(context: Context?, attrs: AttributeSet?
         mPath!!.lineTo(x, y)
     }
 
-    private fun drawing(i: Int) {
-        determine(i * 1f, nextInt(400) * 1f)
-        determine(nextInt(400) * 1f, i * 1f)
+    private fun drawing(x: Int, y: Int) {
+        determine(x * 1f, y * 1f)
+
         invalidate()
     }
 
-    suspend fun algo1(speed: Long) {
-        var i = 0
-        val chastota = 1000 / speed
-        try {
-            CoroutineScope(CoroutineName("Alisher")).launch {
-                    while (i < 500) {
-                        drawing(i)
-                        delay(chastota)
-                        i++
-                    }
-                }
-            }catch (e:Exception){ }
+    private fun algorithm1(): List<Pair<Int, Int>> {
+        val k=200
+        val a = mBitmap!!.width - k
+        val b = mBitmap!!.height - k
+        val list = arrayListOf<Pair<Int, Int>>()
+        for (i in k..a step 4) list.add(Pair(i, k))
+        for (i in k..b step 4) list.add(Pair(a, i))
+        for (i in a downTo k step 4) list.add(Pair(i, b))
+        for (i in b downTo k step 4) list.add(Pair(k, i))
+        return list
+    }
+    private fun algorithm2(): List<Pair<Int, Int>> {
+        var k=50
+        var l=0
+        val a = mBitmap!!.width - k
+        val b = mBitmap!!.height - k
+        val list = arrayListOf<Pair<Int, Int>>()
+        repeat(5){
+            for (i in k-50..a-l step 4) list.add(Pair(i, k))
+            for (i in k..b-l step 4) list.add(Pair(a-l, i))
+            for (i in a-l downTo k step 4) list.add(Pair(i, b-l))
+            for (i in b-l downTo k+50 step 4) list.add(Pair(k, i))
+            k+=50
+            l+=50
+        }
+
+        return list
+    }
+
+    fun algo1(speed: Long) {
+        paths.clear()
+        val algorithm = algorithm2()
+        Timer(speed) {it,timer->
+            if (it<algorithm.size) {
+                val x = algorithm[it].first
+                val y = algorithm[it].second
+                drawing(x, y)
+            }
+            else {
+                timer.cancel()
+            }
+        }.startTimer()
     }
 }

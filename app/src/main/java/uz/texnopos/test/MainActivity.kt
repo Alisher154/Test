@@ -41,14 +41,10 @@ class MainActivity : AppCompatActivity() {
                 drawView.viewTreeObserver()
             }
 
-            btnGenerate.setOnClickListener {
-                val speed = slider.value.toLong()
-                CoroutineScope(Dispatchers.IO).launch {
-                    image1.drawView.algo1(speed)
-                }
-                CoroutineScope(Dispatchers.IO).launch {
-                    image2.drawView.algo1(speed)
-                }
+            btnGenerate.onClick {
+                val speed = 1000/slider.value.toLong()
+                image1.drawView.algo1(speed)
+                image2.drawView.algo1(speed)
             }
         }
     }
