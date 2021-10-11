@@ -25,7 +25,9 @@ class DrawView @JvmOverloads constructor(context: Context?, attrs: AttributeSet?
     private var mCanvas: Canvas? = null
     private val mBitmapPaint = Paint(Paint.DITHER_FLAG)
     private var timer:CoroutineTimer?=null
-
+    var width:Int?=null
+    var height:Int?=null
+    private var myPaths= arrayListOf<Pair<Int,Int>>()
     init {
         mPaint.isAntiAlias = true
         mPaint.isDither = true
@@ -41,7 +43,7 @@ class DrawView @JvmOverloads constructor(context: Context?, attrs: AttributeSet?
         mCanvas = Canvas(mBitmap!!)
 
         currentColor = Color.BLACK
-        strokeWidth = 4
+        strokeWidth = 36
     }
 
     override fun onDraw(canvas: Canvas) {
@@ -93,56 +95,80 @@ class DrawView @JvmOverloads constructor(context: Context?, attrs: AttributeSet?
     companion object {
         private const val TOUCH_TOLERANCE = 4f
     }
-    private fun drawing(x: Int, y: Int) {
-        invalidate()
-    }
 
-    private fun algorithm1(): List<Pair<Int, Int>> {
-        val k=200
-        val a = mBitmap!!.width - k
-        val b = mBitmap!!.height - k
+
+    private fun algorithm1(count:Int): List<Pair<Int, Int>> {
+        val a = width!!/36
+        val b = height!!/36
         val list = arrayListOf<Pair<Int, Int>>()
-        for (i in k..a step 4) list.add(Pair(i, k))
-        for (i in k..b step 4) list.add(Pair(a, i))
-        for (i in a downTo k step 4) list.add(Pair(i, b))
-        for (i in b downTo k step 4) list.add(Pair(k, i))
-        return list
-    }
-    private fun algorithm2(): List<Pair<Int, Int>> {
-        var k = 50
-        var l = 0
-        val a = mBitmap!!.width - k
-        val b = mBitmap!!.height - k
-        val list = arrayListOf<Pair<Int, Int>>()
-        repeat(5) {
-            for (i in k - 50..a - l step 4) list.add(Pair(i, k))
-            for (i in k..b - l step 4) list.add(Pair(a - l, i))
-            for (i in a - l downTo k step 4) list.add(Pair(i, b - l))
-            for (i in b - l downTo k + 50 step 4) list.add(Pair(k, i))
-            k += 50
-            l += 50
+        var i=count
+        while (i>0){
+            val x = nextInt(1,width!!/36)*36
+            val y = nextInt(1,height!!/36)*36
+            val p=Pair(x,y)
+            if (!myPaths.contains(p)&&!list.contains(p)) {
+                list.add(p)
+                i--
+            }
         }
 
         return list
     }
+    private fun algorithm2(): List<Pair<Int, Int>> {
+        var k = 1
+        var l = 0
+        val a = width!!
+        val b = height!!
+        val list = arrayListOf<Pair<Int, Int>>()
+        repeat(6) {
+            for (i in k - 1..a/36) if (!myPaths.contains(Pair(i*36,k*36))) list.add(Pair(i*36, k*36))
+            for (i in k..b/36) if (!myPaths.contains(Pair((a/36 - l)*36, i*36))) list.add(Pair((a/36 - l)*36, i*36))
+            for (i in a/36 - l downTo k) if (!myPaths.contains(Pair(i*36, (b/36 - l)*36))) list.add(Pair(i*36, (b/36 - l)*36))
+            for (i in b/36 - l downTo k + 1) if (!myPaths.contains(Pair(k*36, i*36))) list.add(Pair(k*36, i*36))
+            k += 1
+            l += 1
+        }
+        Log.d(TAG, "algorithm2: $list")
+        return list
+    }
 
+    fun generate(speed: Long) {
+        currentColor=Color.BLACK
+        if (timer != null) timer!!.destroyTimer()
+        paths.clear()
+        myPaths.clear()
+        timer = CoroutineTimer(object : CoroutineTimerListener {
+            override fun onTick(timeLeft: Long?, error: Exception?) {
+                val i = timeLeft!!.toInt()
+                val generate=algorithm1(50)
+                val x=generate[50-i].first
+                val y=generate[50-i].second
+                myPaths.add(Pair(x,y))
+                touchStart(x * 1.0f, y * 1.0f)
+                touchUp()
+                if(i==1) Log.d(TAG, "onPause:size=${myPaths.size} $myPaths }")
+            }
+        })
+        timer!!.startTimer(50L, speed)
+    }
 
     fun algo1(speed: Long) {
-        if (timer!=null) timer!!.destroyTimer()
-        paths.clear()
-        val algorithm = algorithm2()
-        val size=algorithm.size
-        timer = CoroutineTimer(object:CoroutineTimerListener{
+        if (timer != null) timer!!.destroyTimer()
+        val algorithm = algorithm1(205)
+        val size = algorithm.size
+        currentColor=Color.RED
+        timer = CoroutineTimer(object : CoroutineTimerListener {
             override fun onTick(timeLeft: Long?, error: Exception?) {
-                val i=timeLeft!!.toInt()
-                val x = algorithm[size-i].first
+                val i = timeLeft!!.toInt()
+                val x = algorithm[size - i].first
                 val y = algorithm[size-i].second
-                when (i) {
-                    size -> touchStart(x*1.0f,y*1.0f)
-                    0 -> touchUp()
-                    else -> touchMove(x*1.0f,y*1.0f)
-                }
-                drawing(x, y)
+//                when (i) {
+//                    size -> touchStart(x*1.0f,y*1.0f)
+//                    0 -> touchUp()
+//                    else -> touchMove(x*1.0f,y*1.0f)
+//                }
+                touchStart(x * 1.0f, y * 1.0f)
+                touchUp()
             }
         })
         timer!!.startTimer(size.toLong(),speed)

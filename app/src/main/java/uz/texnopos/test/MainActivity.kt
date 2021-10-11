@@ -7,6 +7,7 @@ import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewTreeObserver
+import android.view.ViewTreeObserver.*
 import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.annotation.RequiresApi
@@ -22,6 +23,7 @@ class MainActivity : AppCompatActivity() {
     private var mWidth: Int? = null
     private var mHeight: Int? = null
     private var orientation: Int = 0
+    private var speed =80L
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -48,23 +50,44 @@ class MainActivity : AppCompatActivity() {
                 drawView.viewTreeObserver()
             }
 
+            slider.addOnChangeListener { _, value, _ ->
+                speed=4000/value.toLong()
+            }
+
             btnGenerate.onClick {
-                val speed = 1000/slider.value.toLong()
-                    image1.drawView.algo1(speed)
-                    image2.drawView.algo1(speed)
+                if (mWidth!=null&&mHeight!=null){
+                    image1.drawView.generate(speed)
+                    image2.drawView.generate(speed)
+                }
+            }
+            image1.drawView.onClick {
+                this.algo1(speed)
+            }
+            image2.drawView.onClick {
+                this.algo1(speed)
             }
         }
     }
 
     fun DrawView.viewTreeObserver() {
         val vto = this.viewTreeObserver
-        vto.addOnGlobalLayoutListener(object : ViewTreeObserver.OnGlobalLayoutListener {
+        vto.addOnGlobalLayoutListener(object : OnGlobalLayoutListener {
             override fun onGlobalLayout() {
                 this@viewTreeObserver.viewTreeObserver.removeOnGlobalLayoutListener(this)
                 val width = this@viewTreeObserver.measuredWidth
                 val height = this@viewTreeObserver.measuredHeight
                 mWidth = width
                 mHeight = height
+                bind.apply {
+                    image1.drawView.apply {
+                        this.width=mWidth
+                        this.height=mHeight
+                    }
+                    image2.drawView.apply {
+                        this.width=mWidth
+                        this.height=mHeight
+                    }
+                }
                 if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
                     bind.edtWidth!!.setText(if (mWidth != null) mWidth.toString() else "")
                     bind.edtHeight!!.setText(if (mHeight != null) mHeight.toString() else "")
@@ -97,6 +120,16 @@ class MainActivity : AppCompatActivity() {
                     if (validate) {
                         mWidth = edtWidth.textToString().toInt()
                         mHeight = edtHeight.textToString().toInt()
+                        bind.apply {
+                            image1.drawView.apply {
+                                this.width=mWidth
+                                this.height=mHeight
+                            }
+                            image2.drawView.apply {
+                                this.width=mWidth
+                                this.height=mHeight
+                            }
+                        }
                         dismiss()
                     }
                 }
