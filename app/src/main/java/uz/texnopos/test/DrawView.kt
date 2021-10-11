@@ -5,13 +5,17 @@ import android.graphics.*
 import android.util.AttributeSet
 import android.util.Log
 import android.view.View
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import uz.texnopos.test.timer.CoroutineTimer
+import uz.texnopos.test.timer.CoroutineTimerListener
 import java.util.*
+import kotlin.math.abs
+import kotlin.random.Random.Default.nextInt
 
 class DrawView @JvmOverloads constructor(context: Context?, attrs: AttributeSet? = null) :
     View(context, attrs) {
+    private var mX = 0f
+    private var mY = 0f
+
     private var mPath: Path? = null
     private val mPaint: Paint = Paint()
     private val paths = ArrayList<Stroke>()
@@ -20,6 +24,7 @@ class DrawView @JvmOverloads constructor(context: Context?, attrs: AttributeSet?
     private var mBitmap: Bitmap? = null
     private var mCanvas: Canvas? = null
     private val mBitmapPaint = Paint(Paint.DITHER_FLAG)
+    private var timer:CoroutineTimer?=null
 
     init {
         mPaint.isAntiAlias = true
@@ -58,18 +63,37 @@ class DrawView @JvmOverloads constructor(context: Context?, attrs: AttributeSet?
         canvas.restore()
     }
 
-    private fun determine(x: Float, y: Float) {
+
+    private fun touchStart(x: Float, y: Float) {
         mPath = Path()
         val fp = Stroke(currentColor, strokeWidth, mPath!!)
         paths.add(fp)
         mPath!!.reset()
         mPath!!.moveTo(x, y)
-        mPath!!.lineTo(x, y)
+        mX = x
+        mY = y
+        invalidate()
     }
 
-    private fun drawing(x: Int, y: Int) {
-        determine(x * 1f, y * 1f)
+    private fun touchMove(x: Float, y: Float) {
+        val dx = abs(x - mX)
+        val dy = abs(y - mY)
+        if (dx >= TOUCH_TOLERANCE || dy >= TOUCH_TOLERANCE) {
+            mPath!!.quadTo(mX, mY, (x + mX) / 2, (y + mY) / 2)
+            mX = x
+            mY = y
+        }
+        invalidate()
+    }
 
+    private fun touchUp() {
+        mPath!!.lineTo(mX, mY)
+        invalidate()
+    }
+    companion object {
+        private const val TOUCH_TOLERANCE = 4f
+    }
+    private fun drawing(x: Int, y: Int) {
         invalidate()
     }
 
@@ -85,35 +109,42 @@ class DrawView @JvmOverloads constructor(context: Context?, attrs: AttributeSet?
         return list
     }
     private fun algorithm2(): List<Pair<Int, Int>> {
-        var k=50
-        var l=0
+        var k = 50
+        var l = 0
         val a = mBitmap!!.width - k
         val b = mBitmap!!.height - k
         val list = arrayListOf<Pair<Int, Int>>()
-        repeat(5){
-            for (i in k-50..a-l step 4) list.add(Pair(i, k))
-            for (i in k..b-l step 4) list.add(Pair(a-l, i))
-            for (i in a-l downTo k step 4) list.add(Pair(i, b-l))
-            for (i in b-l downTo k+50 step 4) list.add(Pair(k, i))
-            k+=50
-            l+=50
+        repeat(5) {
+            for (i in k - 50..a - l step 4) list.add(Pair(i, k))
+            for (i in k..b - l step 4) list.add(Pair(a - l, i))
+            for (i in a - l downTo k step 4) list.add(Pair(i, b - l))
+            for (i in b - l downTo k + 50 step 4) list.add(Pair(k, i))
+            k += 50
+            l += 50
         }
 
         return list
     }
 
+
     fun algo1(speed: Long) {
+        if (timer!=null) timer!!.destroyTimer()
         paths.clear()
         val algorithm = algorithm2()
-        Timer(speed) {it,timer->
-            if (it<algorithm.size) {
-                val x = algorithm[it].first
-                val y = algorithm[it].second
+        val size=algorithm.size
+        timer = CoroutineTimer(object:CoroutineTimerListener{
+            override fun onTick(timeLeft: Long?, error: Exception?) {
+                val i=timeLeft!!.toInt()
+                val x = algorithm[size-i].first
+                val y = algorithm[size-i].second
+                when (i) {
+                    size -> touchStart(x*1.0f,y*1.0f)
+                    0 -> touchUp()
+                    else -> touchMove(x*1.0f,y*1.0f)
+                }
                 drawing(x, y)
             }
-            else {
-                timer.cancel()
-            }
-        }.startTimer()
+        })
+        timer!!.startTimer(size.toLong(),speed)
     }
 }

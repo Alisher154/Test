@@ -2,20 +2,27 @@ package uz.texnopos.test
 
 import android.app.Dialog
 import android.content.res.Configuration
+import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewTreeObserver
 import android.widget.ArrayAdapter
+import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.*
 import uz.texnopos.test.databinding.ActivityMainBinding
 import uz.texnopos.test.databinding.DialogSizeBinding
+import java.time.LocalDateTime
 
 class MainActivity : AppCompatActivity() {
     private lateinit var bind: ActivityMainBinding
     private var mWidth: Int? = null
     private var mHeight: Int? = null
     private var orientation: Int = 0
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         bind = ActivityMainBinding.inflate(layoutInflater)
@@ -43,8 +50,8 @@ class MainActivity : AppCompatActivity() {
 
             btnGenerate.onClick {
                 val speed = 1000/slider.value.toLong()
-                image1.drawView.algo1(speed)
-                image2.drawView.algo1(speed)
+                    image1.drawView.algo1(speed)
+                    image2.drawView.algo1(speed)
             }
         }
     }
