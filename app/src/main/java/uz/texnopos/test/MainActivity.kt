@@ -51,20 +51,21 @@ class MainActivity : AppCompatActivity() {
             }
 
             slider.addOnChangeListener { _, value, _ ->
-                speed=4000/value.toLong()
+                image1.drawView.speed=1000/value.toLong()
+                image2.drawView.speed=1000/value.toLong()
             }
 
             btnGenerate.onClick {
                 if (mWidth!=null&&mHeight!=null){
-                    image1.drawView.generate(speed)
-                    image2.drawView.generate(speed)
+                    image1.drawView.generate()
+                    image2.drawView.generate()
                 }
             }
             image1.drawView.onClick {
-                this.algo1(speed)
+
             }
             image2.drawView.onClick {
-                this.algo1(speed)
+
             }
         }
     }
@@ -80,12 +81,12 @@ class MainActivity : AppCompatActivity() {
                 mHeight = height
                 bind.apply {
                     image1.drawView.apply {
-                        this.width=mWidth
-                        this.height=mHeight
+                        this.width=mWidth!!+25
+                        this.height=mHeight!!+25
                     }
                     image2.drawView.apply {
-                        this.width=mWidth
-                        this.height=mHeight
+                        this.width=mWidth!!+25
+                        this.height=mHeight!!+25
                     }
                 }
                 if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
@@ -122,12 +123,12 @@ class MainActivity : AppCompatActivity() {
                         mHeight = edtHeight.textToString().toInt()
                         bind.apply {
                             image1.drawView.apply {
-                                this.width=mWidth
-                                this.height=mHeight
+                                this.width=mWidth!!+25
+                                this.height=mHeight!!+25
                             }
                             image2.drawView.apply {
-                                this.width=mWidth
-                                this.height=mHeight
+                                this.width=mWidth!!+25
+                                this.height=mHeight!!+25
                             }
                         }
                         dismiss()
