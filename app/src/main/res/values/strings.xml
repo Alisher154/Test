@@ -1,3 +1,10 @@
 <resources>
     <string name="app_name">Test</string>
+    <string name="size">size</string>
+    <string name="generate">Generate</string>
+    <string name="h">H</string>
+    <string name="x">x</string>
+    <string name="w">W</string>
+    <string name="cancel">Cancel</string>
+    <string name="ok">OK</string>
 </resources>

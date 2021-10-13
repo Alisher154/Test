@@ -12,7 +12,8 @@
         android:orientation="horizontal"
         android:weightSum="2"
         app:layout_constraintBottom_toTopOf="@id/lnSize"
-        app:layout_constraintTop_toTopOf="parent">
+        app:layout_constraintTop_toTopOf="parent"
+        android:baselineAligned="false">
 
         <FrameLayout
             android:layout_width="0dp"
@@ -49,7 +50,7 @@
             android:layout_height="wrap_content"
             android:inputType="number"
             android:maxLength="3"
-            android:hint="W"
+            android:hint="@string/w"
             android:gravity="center"
             android:textColor="@color/black"/>
 
@@ -58,7 +59,7 @@
             android:id="@+id/tvAnd"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="x"
+            android:text="@string/x"
             android:textSize="18sp"
             app:layout_constraintBottom_toBottomOf="parent"
             />
@@ -69,7 +70,7 @@
             android:layout_height="wrap_content"
             android:inputType="number"
             android:maxLength="3"
-            android:hint="H"
+            android:hint="@string/h"
             android:gravity="center"
             android:textColor="@color/black"
             />
@@ -79,7 +80,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
-        android:text="Generate"
+        android:text="@string/generate"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toEndOf="@id/lnSize" />
 
@@ -89,10 +90,10 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="4dp"
         android:layout_marginEnd="@dimen/margin_standard"
-        android:stepSize="50"
-        android:valueFrom="50"
-        android:valueTo="500"
-        android:value="50"
+        android:stepSize="5"
+        android:valueFrom="5"
+        android:valueTo="20"
+        android:value="5"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@id/btnGenerate" />

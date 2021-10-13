@@ -10,7 +10,6 @@ import android.view.View
 import uz.texnopos.test.timer.CoroutineTimer
 import uz.texnopos.test.timer.CoroutineTimerListener
 import java.util.*
-import kotlin.math.abs
 import kotlin.random.Random.Default.nextInt
 
 class DrawView @JvmOverloads constructor(context: Context?, attrs: AttributeSet? = null) :
@@ -26,11 +25,13 @@ class DrawView @JvmOverloads constructor(context: Context?, attrs: AttributeSet?
     private var mBitmap: Bitmap? = null
     private var mCanvas: Canvas? = null
     private val mBitmapPaint = Paint(Paint.DITHER_FLAG)
-    private var timer:CoroutineTimer?=null
-    var width:Int?=null
+    private var timer: CoroutineTimer? = null
+    var width: Int? = null
     var height: Int? = null
     var speed = 200L
+    var algorithmType = 1
     private var myPaths = arrayListOf<Pair<Int, Int>>()
+
     init {
         mPaint.isAntiAlias = true
         mPaint.isDither = true
@@ -44,16 +45,13 @@ class DrawView @JvmOverloads constructor(context: Context?, attrs: AttributeSet?
     fun init(height: Int, width: Int) {
         mBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         mCanvas = Canvas(mBitmap!!)
-
         currentColor = Color.BLACK
         strokeWidth = 25
     }
 
     override fun onDraw(canvas: Canvas) {
         canvas.save()
-        val backgroundColor = Color.WHITE
-        mCanvas!!.drawColor(backgroundColor)
-
+        mCanvas!!.drawColor(Color.WHITE)
         try {
             for (fp in paths) {
                 mPaint.color = fp.color
@@ -63,29 +61,25 @@ class DrawView @JvmOverloads constructor(context: Context?, attrs: AttributeSet?
         } catch (e: Exception) {
             e.printStackTrace()
         }
-
-        canvas.drawBitmap(mBitmap!!, 0f, 0f, mBitmapPaint)
+        canvas.drawBitmap(mBitmap!!, -12.5f, -12.5f, mBitmapPaint)
         canvas.restore()
     }
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(event: MotionEvent): Boolean {
-        val x = event.x + 12.5
-        val y = event.y + 12.5
+        val x = event.x + 15
+        val y = event.y + 15
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
                 touchPaths.clear()
-                floodFill(Pair((x / strokeWidth).toInt(), (y / strokeWidth).toInt()))
+                val p = Pair((x / strokeWidth).toInt(), (y / strokeWidth).toInt())
+                when (algorithmType) {
+                    1 -> algorithm1(p)
+                    2 -> algorithm2(p)
+                    3 -> algorithm3(p)
+                }
                 startDraw()
             }
-//            MotionEvent.ACTION_MOVE -> {
-//                touchMove(x, y)
-//                invalidate()
-//            }
-//            MotionEvent.ACTION_UP -> {
-//                touchUp()
-//                invalidate()
-//            }
         }
         return true
     }
@@ -101,24 +95,9 @@ class DrawView @JvmOverloads constructor(context: Context?, attrs: AttributeSet?
         invalidate()
     }
 
-    private fun touchMove(x: Float, y: Float) {
-        val dx = abs(x - mX)
-        val dy = abs(y - mY)
-        if (dx >= TOUCH_TOLERANCE || dy >= TOUCH_TOLERANCE) {
-            mPath!!.quadTo(mX, mY, (x + mX) / 2, (y + mY) / 2)
-            mX = x
-            mY = y
-        }
-        invalidate()
-    }
-
     private fun touchUp() {
         mPath!!.lineTo(mX, mY)
         invalidate()
-    }
-
-    companion object {
-        private const val TOUCH_TOLERANCE = 0f
     }
 
     private fun pick(): List<Pair<Int, Int>> {
@@ -126,15 +105,16 @@ class DrawView @JvmOverloads constructor(context: Context?, attrs: AttributeSet?
         val b = height!! / strokeWidth
         val list = arrayListOf<Pair<Int, Int>>()
         var i = a * b * 2 / 5
-        while (i > 0) {
-            val x = nextInt(1, a)
-            val y = nextInt(1, b)
-            val p = Pair(x, y)
-            if (!myPaths.contains(p) && !list.contains(p)) {
-                list.add(p)
-                i--
+        if (a > 1 && b > 1)
+            while (i > 0) {
+                val x = nextInt(1, a)
+                val y = nextInt(1, b)
+                val p = Pair(x, y)
+                if (!myPaths.contains(p) && !list.contains(p)) {
+                    list.add(p)
+                    i--
+                }
             }
-        }
 
         return list
     }
@@ -142,8 +122,6 @@ class DrawView @JvmOverloads constructor(context: Context?, attrs: AttributeSet?
     private fun startDraw() {
         if (timer != null) timer!!.destroyTimer()
         val algorithm = touchPaths
-        Log.d(TAG,
-            "algo1: width=${width!! / strokeWidth} height=${height!! / strokeWidth} ${myPaths.size}")
         val size = algorithm.size
         currentColor = Color.RED
         timer = CoroutineTimer(object : CoroutineTimerListener {
@@ -164,11 +142,10 @@ class DrawView @JvmOverloads constructor(context: Context?, attrs: AttributeSet?
         paths.clear()
         myPaths.clear()
         val generate = pick()
-        val size=generate.size
+        val size = generate.size
         timer = CoroutineTimer(object : CoroutineTimerListener {
             override fun onTick(timeLeft: Long?, error: Exception?) {
                 val i = timeLeft!!.toInt()
-
                 val x = generate[size - i].first
                 val y = generate[size - i].second
                 myPaths.add(Pair(x, y))
@@ -180,35 +157,41 @@ class DrawView @JvmOverloads constructor(context: Context?, attrs: AttributeSet?
         timer!!.startTimer(size.toLong(), speed)
     }
 
-    fun algo1(speed: Long) {
-        if (timer != null) timer!!.destroyTimer()
-        val algorithm = pick()
-        Log.d(TAG,
-            "algo1: width=${width!! / strokeWidth} height=${height!! / strokeWidth} ${myPaths.size}")
-        val size = algorithm.size
-        currentColor = Color.RED
-        timer = CoroutineTimer(object : CoroutineTimerListener {
-            override fun onTick(timeLeft: Long?, error: Exception?) {
-                val i = timeLeft!!.toInt()
-                val x = algorithm[size - i].first * strokeWidth
-                val y = algorithm[size - i].second * strokeWidth
-                touchStart(x * 1.0f, y * 1.0f)
-                touchUp()
-            }
-        })
-        timer!!.startTimer(size.toLong(), speed)
-    }
-
     private val touchPaths = mutableListOf<Pair<Int, Int>>()
-    private fun floodFill(p: Pair<Int, Int>) {
+    private fun algorithm1(p: Pair<Int, Int>) {
         val t1 = p.first > 0 && p.first < width!! / strokeWidth
         val t2 = p.second > 0 && p.second < height!! / strokeWidth
         if (t1 && t2 && !touchPaths.contains(p) && !myPaths.contains(p)) {
             touchPaths.add(p)
-            floodFill(Pair(p.first + 1, p.second))
-            floodFill(Pair(p.first - 1, p.second))
-            floodFill(Pair(p.first, p.second + 1))
-            floodFill(Pair(p.first, p.second - 1))
+            algorithm1(Pair(p.first + 1, p.second))
+            algorithm1(Pair(p.first, p.second + 1))
+            algorithm1(Pair(p.first - 1, p.second))
+            algorithm1(Pair(p.first, p.second - 1))
+        } else return
+    }
+
+    private fun algorithm2(p: Pair<Int, Int>) {
+        val t1 = p.first > 0 && p.first < width!! / strokeWidth
+        val t2 = p.second > 0 && p.second < height!! / strokeWidth
+        if (t1 && t2 && !touchPaths.contains(p) && !myPaths.contains(p)) {
+            touchPaths.add(p)
+            algorithm2(Pair(p.first, p.second + 1))
+            algorithm2(Pair(p.first + 1, p.second))
+            algorithm2(Pair(p.first, p.second - 1))
+            algorithm2(Pair(p.first - 1, p.second))
+        } else return
+    }
+
+
+    private fun algorithm3(p: Pair<Int, Int>) {
+        val t1 = p.first > 0 && p.first < width!! / strokeWidth
+        val t2 = p.second > 0 && p.second < height!! / strokeWidth
+        if (t1 && t2 && !touchPaths.contains(p) && !myPaths.contains(p)) {
+            touchPaths.add(p)
+            algorithm3(Pair(p.first + 1, p.second))
+            algorithm3(Pair(p.first, p.second - 1))
+            algorithm3(Pair(p.first - 1, p.second))
+            algorithm3(Pair(p.first, p.second + 1))
         } else return
     }
 }
